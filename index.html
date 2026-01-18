@@ -52,72 +52,77 @@
         return Array.from(new Uint8Array(_0x9e)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    if (sessionStorage.getItem("__auth") !== "true") {
-        let _0xp = prompt("PASSKEY:");
-        if (_0xp) {
-            const _0xr = await _0x4a(_0xp, "170408");
-            if (_0xr === "77196020581335091726a84c680875e533088730999596486060609355428943") {
-                sessionStorage.setItem("__auth", "true");
+    const start = async () => {
+        if (sessionStorage.getItem("__auth") !== "true") {
+            let _0xp = prompt("PASSKEY:");
+            if (_0xp) {
+                const _0xr = await _0x4a(_0xp, "170408");
+                if (_0xr === "77196020581335091726a84c680875e533088730999596486060609355428943") {
+                    sessionStorage.setItem("__auth", "true");
+                    location.reload();
+                } else {
+                    document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>😡🖕</h1><p>LU MAU NGAPAIN TOLOL?</p><button onclick='location.reload()'>Coba Lagi</button></div>";
+                    return;
+                }
             } else {
-                document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>🛑 403</h1><p>LU MAU NGAPAIN TOLOL?</p></div>";
-                throw new Error();
+                document.body.innerHTML = "";
+                return;
             }
-        } else {
-            document.body.innerHTML = "";
-            throw new Error();
         }
-    }
 
-    const conf = {
-        apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
-        authDomain: "adminhann25.firebaseapp.com",
-        projectId: "adminhann25",
-        databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app",
-        storageBucket: "adminhann25.firebasestorage.app",
-        messagingSenderId: "1020946488981",
-        appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
+        const conf = {
+            apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
+            authDomain: "adminhann25.firebaseapp.com",
+            projectId: "adminhann25",
+            databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app",
+            storageBucket: "adminhann25.firebasestorage.app",
+            messagingSenderId: "1020946488981",
+            appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
+        };
+
+        const app = initializeApp(conf);
+        const db = getDatabase(app);
+
+        window.saveProfile = () => {
+            const logo = document.getElementById('set-logo').value;
+            const name = document.getElementById('set-name').value;
+            if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Sip!", "Profil Update", "success"));
+        };
+
+        onValue(ref(db, 'dashboard/profile'), (s) => {
+            if(s.exists()){
+                document.getElementById('set-logo').value = s.val().logo;
+                document.getElementById('set-name').value = s.val().name;
+            }
+        });
+
+        window.addCategory = () => {
+            const n = document.getElementById('cat-name').value.trim();
+            if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
+        };
+
+        onValue(ref(db, 'dashboard/categories'), (s) => {
+            const l = document.getElementById('cat-list'), sc = document.getElementById('select-cat');
+            l.innerHTML = ""; sc.innerHTML = "<option value=''>-- Pilih Kategori --</option>";
+            if(s.exists()){
+                s.forEach(c => {
+                    l.innerHTML += `<div class="item"><span>${c.val().name}</span><button class="btn-red" onclick="del('dashboard/categories/${c.key}')">Hapus</button></div>`;
+                    sc.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
+                });
+            }
+        });
+
+        window.addButton = () => {
+            const id = document.getElementById('select-cat').value, i = document.getElementById('btn-icon').value, lb = document.getElementById('btn-label').value, ln = document.getElementById('btn-link').value;
+            if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln }).then(() => Swal.fire("Berhasil", "Tombol Ditambah", "success"));
+        };
+
+        window.del = (p) => {
+            Swal.fire({title: "Hapus?", showCancelButton: true}).then((r) => { if(r.isConfirmed) remove(ref(db, p)); });
+        };
     };
 
-    const app = initializeApp(conf);
-    const db = getDatabase(app);
-
-    window.saveProfile = () => {
-        const logo = document.getElementById('set-logo').value;
-        const name = document.getElementById('set-name').value;
-        if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Ok", "", "success"));
-    };
-
-    onValue(ref(db, 'dashboard/profile'), (s) => {
-        if(s.exists()){
-            document.getElementById('set-logo').value = s.val().logo;
-            document.getElementById('set-name').value = s.val().name;
-        }
-    });
-
-    window.addCategory = () => {
-        const n = document.getElementById('cat-name').value.trim();
-        if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
-    };
-
-    onValue(ref(db, 'dashboard/categories'), (s) => {
-        const l = document.getElementById('cat-list'), sc = document.getElementById('select-cat');
-        l.innerHTML = ""; sc.innerHTML = "";
-        if(s.exists()){
-            s.forEach(c => {
-                l.innerHTML += `<div class="item"><span>${c.val().name}</span><button class="btn-red" onclick="del('dashboard/categories/${c.key}')">Hapus</button></div>`;
-                sc.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
-            });
-        }
-    });
-
-    window.addButton = () => {
-        const id = document.getElementById('select-cat').value, i = document.getElementById('btn-icon').value, lb = document.getElementById('btn-label').value, ln = document.getElementById('btn-link').value;
-        if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln });
-    };
-
-    window.del = (p) => {
-        Swal.fire({title: "Hapus?", showCancelButton: true}).then((r) => { if(r.isConfirmed) remove(ref(db, p)); });
-    };
+    start();
 </script>
 </body>
 </html>
