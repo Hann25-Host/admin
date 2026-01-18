@@ -17,6 +17,7 @@
         .btn-blue:hover { background: #0284c7; }
         .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; border: none; cursor: pointer; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
+        .icon-preview { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; margin-right: 5px; }
         #main-content { display: none; }
     </style>
 </head>
@@ -48,8 +49,8 @@
             <h2>🔘 2. Tambah Tombol</h2>
             <label>Pilih Kategori</label>
             <select id="select-cat"></select>
-            <label>Icon / Emoji</label>
-            <input type="text" id="btn-icon" placeholder="💬">
+            <label>Icon (Emoji atau URL Gambar)</label>
+            <input type="text" id="btn-icon" placeholder="💬 atau https://link.com/icon.png">
             <label>Nama Tombol</label>
             <input type="text" id="btn-label" placeholder="WhatsApp Utama">
             <label>Link Tujuan</label>
@@ -80,9 +81,7 @@
                 document.getElementById("main-content").style.display = "block";
                 return;
             }
-
             const key = "am9qb2hhbm4yNQ=="; 
-
             const { value: inputPw } = await Swal.fire({
                 title: 'ADMIN ACCESS',
                 input: 'password',
@@ -95,17 +94,12 @@
                 preConfirm: (val) => {
                     return new Promise((resolve) => {
                         setTimeout(() => {
-                            if (btoa(val) === key) {
-                                resolve(true);
-                            } else {
-                                Swal.showValidationMessage('Password Salah Kocak!');
-                                resolve(false);
-                            }
+                            if (btoa(val) === key) resolve(true);
+                            else { Swal.showValidationMessage('Password Salah Kocak!'); resolve(false); }
                         }, 1000);
                     });
                 }
             });
-
             if (inputPw) {
                 sessionStorage.setItem("__auth", "true");
                 document.getElementById("main-content").style.display = "block";
@@ -146,10 +140,22 @@
 
         window.addButton = () => {
             const cid = document.getElementById('select-cat').value;
-            const ic = document.getElementById('btn-icon').value;
-            const lb = document.getElementById('btn-label').value;
-            const ln = document.getElementById('btn-link').value;
-            if(cid && lb && ln) push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln, ts: Date.now() }).then(() => Swal.fire("Sip!", "Tombol Ditambah", "success"));
+            const ic = document.getElementById('btn-icon').value.trim();
+            const lb = document.getElementById('btn-label').value.trim();
+            const ln = document.getElementById('btn-link').value.trim();
+            if(cid && lb && ln) {
+                push(ref(db, `dashboard/categories/${cid}/buttons`), { 
+                    icon: ic || '🔗', 
+                    label: lb, 
+                    link: ln, 
+                    ts: Date.now() 
+                }).then(() => {
+                    Swal.fire("Sip!", "Tombol Ditambah", "success");
+                    document.getElementById('btn-icon').value = "";
+                    document.getElementById('btn-label').value = "";
+                    document.getElementById('btn-link').value = "";
+                });
+            }
         };
 
         window.delData = (path) => {
