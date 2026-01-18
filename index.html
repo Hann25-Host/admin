@@ -40,7 +40,19 @@
         </div>
 
         <div class="card">
-            <h2>📂 1. Kelola Kategori</h2>
+            <h2>📑 1. Kelola Sidebar</h2>
+            <label>Icon Menu (Emoji)</label>
+            <input type="text" id="side-icon">
+            <label>Nama Menu</label>
+            <input type="text" id="side-label">
+            <label>Link Tujuan</label>
+            <input type="text" id="side-link">
+            <button class="btn btn-blue" onclick="window.addSidebar()">Tambah Menu Sidebar</button>
+            <div id="side-list" style="margin-top:20px;"></div>
+        </div>
+
+        <div class="card">
+            <h2>📂 2. Kelola Kategori</h2>
             <label>Nama Kategori Baru</label>
             <input type="text" id="cat-name">
             <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
@@ -48,9 +60,9 @@
         </div>
 
         <div class="card">
-            <h2>🔘 2. Tambah Tombol</h2>
+            <h2>🔘 3. Tambah Tombol Baru</h2>
             <label>Pilih Kategori</label>
-            <select id="select-cat"></select>
+            <select class="cat-select-sync"></select>
             <label>Icon (Emoji atau URL Gambar)</label>
             <input type="text" id="btn-icon">
             <label>Nama Tombol</label>
@@ -58,6 +70,13 @@
             <label>Link Tujuan</label>
             <input type="text" id="btn-link">
             <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol</button>
+        </div>
+
+        <div class="card">
+            <h2>🗑️ 4. Hapus Tombol</h2>
+            <label>Pilih Kategori untuk Lihat Daftar Tombol</label>
+            <select class="cat-select-sync" onchange="window.loadButtonsToManage(this.value)"></select>
+            <div id="manage-btn-list" style="margin-top:20px;"></div>
         </div>
     </div>
 
@@ -80,7 +99,6 @@
         const db = getDatabase(app);
         const remoteConfig = getRemoteConfig(app);
 
-        // Set biar update-nya real-time (langsung kerasa)
         remoteConfig.settings.minimumFetchIntervalMillis = 0;
 
         const checkAccess = async () => {
@@ -88,12 +106,9 @@
                 document.getElementById("main-content").style.display = "block";
                 return;
             }
-
             try {
-                // Tarik password dari Remote Config
                 await fetchAndActivate(remoteConfig);
                 const passkeyBenar = getValue(remoteConfig, "admin_password").asString();
-
                 const { value: inputPw } = await Swal.fire({
                     title: 'ADMIN ACCESS',
                     input: 'password',
@@ -115,15 +130,12 @@
                         });
                     }
                 });
-
                 if (inputPw) {
                     sessionStorage.setItem("__auth", "true");
                     document.getElementById("main-content").style.display = "block";
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
                 }
             } catch (err) {
-                console.error("Gagal narik Remote Config:", err);
-                Swal.fire("Error", "Gagal menghubungkan ke server", "error");
+                console.error(err);
             }
         };
 
@@ -140,6 +152,29 @@
             }
         });
 
+        window.addSidebar = () => {
+            const ic = document.getElementById('side-icon').value.trim();
+            const lb = document.getElementById('side-label').value.trim();
+            const ln = document.getElementById('side-link').value.trim();
+            if(lb && ln) {
+                push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln }).then(() => {
+                    document.getElementById('side-icon').value = "";
+                    document.getElementById('side-label').value = "";
+                    document.getElementById('side-link').value = "";
+                });
+            }
+        };
+
+        onValue(ref(db, 'dashboard/sidebar'), (s) => {
+            const list = document.getElementById('side-list');
+            list.innerHTML = "";
+            if(s.exists()){
+                s.forEach(child => {
+                    list.innerHTML += `<div class="item"><span>${child.val().icon} <b>${child.val().label}</b></span><button class="btn-red" onclick="window.delData('dashboard/sidebar/${child.key}')">Hapus</button></div>`;
+                });
+            }
+        });
+
         window.addCategory = () => {
             const n = document.getElementById('cat-name').value.trim();
             if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
@@ -147,28 +182,26 @@
 
         onValue(ref(db, 'dashboard/categories'), (s) => {
             const list = document.getElementById('cat-list');
-            const select = document.getElementById('select-cat');
+            const selects = document.querySelectorAll('.cat-select-sync');
             list.innerHTML = "";
-            select.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+            let options = '<option value="">-- Pilih Kategori --</option>';
             if(s.exists()){
                 s.forEach(child => {
                     list.innerHTML += `<div class="item"><span><b>${child.val().name}</b></span><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button></div>`;
-                    select.innerHTML += `<option value="${child.key}">${child.val().name}</option>`;
+                    options += `<option value="${child.key}">${child.val().name}</option>`;
                 });
             }
+            selects.forEach(sel => sel.innerHTML = options);
         });
 
         window.addButton = () => {
-            const cid = document.getElementById('select-cat').value;
+            const cid = document.querySelector('select.cat-select-sync').value;
             const ic = document.getElementById('btn-icon').value.trim();
             const lb = document.getElementById('btn-label').value.trim();
             const ln = document.getElementById('btn-link').value.trim();
             if(cid && lb && ln) {
                 push(ref(db, `dashboard/categories/${cid}/buttons`), { 
-                    icon: ic || '🔗', 
-                    label: lb, 
-                    link: ln, 
-                    ts: Date.now() 
+                    icon: ic || '🔗', label: lb, link: ln, ts: Date.now() 
                 }).then(() => {
                     Swal.fire("Sip!", "Tombol Ditambah", "success");
                     document.getElementById('btn-icon').value = "";
@@ -176,6 +209,19 @@
                     document.getElementById('btn-link').value = "";
                 });
             }
+        };
+
+        window.loadButtonsToManage = (cid) => {
+            const list = document.getElementById('manage-btn-list');
+            if(!cid) { list.innerHTML = ""; return; }
+            onValue(ref(db, `dashboard/categories/${cid}/buttons`), (s) => {
+                list.innerHTML = "";
+                if(s.exists()){
+                    s.forEach(child => {
+                        list.innerHTML += `<div class="item"><span>${child.val().icon} ${child.val().label}</span><button class="btn-red" onclick="window.delData('dashboard/categories/${cid}/buttons/${child.key}')">Hapus</button></div>`;
+                    });
+                }
+            });
         };
 
         window.delData = (path) => {
