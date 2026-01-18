@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HANN 25 - ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; min-height: 100vh; }
         .header-area { text-align: center; margin-bottom: 30px; margin-top: 10px; }
@@ -20,6 +21,11 @@
         .btn-blue:hover { background: #0284c7; }
         .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; border: none; cursor: pointer; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
+        
+        .drag-handle { cursor: grab; margin-right: 15px; color: #0ea5e9; font-size: 18px; font-weight: bold; }
+        .drag-handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.4; background: #0ea5e922; border: 1px dashed #0ea5e9; }
+        
         #main-content { display: none; }
     </style>
 </head>
@@ -31,7 +37,7 @@
         </div>
 
         <div class="card">
-            <h2>📑 1. Kelola Sidebar</h2>
+            <h2>📑 1. Kelola Sidebar (Geser ☰)</h2>
             <label>Icon Menu (Emoji)</label>
             <input type="text" id="side-icon" placeholder="Contoh: 🏠">
             <label>Nama Menu</label>
@@ -43,7 +49,7 @@
         </div>
 
         <div class="card">
-            <h2>📂 2. Kelola Kategori</h2>
+            <h2>📂 2. Kelola Kategori (Geser ☰)</h2>
             <label>Nama Kategori Baru</label>
             <input type="text" id="cat-name" placeholder="Contoh: SOSIAL MEDIA">
             <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
@@ -64,8 +70,8 @@
         </div>
 
         <div class="card">
-            <h2>🗑️ 4. Hapus Tombol</h2>
-            <label>Pilih Kategori untuk Lihat Daftar Tombol</label>
+            <h2>🗑️ 4. Urutkan & Hapus Tombol (Geser ☰)</h2>
+            <label>Pilih Kategori</label>
             <select class="cat-select-sync" onchange="window.loadButtonsToManage(this.value)"></select>
             <div id="manage-btn-list" style="margin-top:20px;"></div>
         </div>
@@ -79,17 +85,14 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-remote-config.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
             authDomain: "adminhann25.firebaseapp.com",
             projectId: "adminhann25",
-            databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app",
-            storageBucket: "adminhann25.firebasestorage.app",
-            messagingSenderId: "1020946488981",
-            appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
+            databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
         const testiConfig = {
@@ -139,39 +142,88 @@
             } catch (err) { console.error(err); }
         };
 
+        // --- SORTABLE SIDEBAR ---
+        const elSide = document.getElementById('side-list');
+        Sortable.create(elSide, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: async () => {
+                const newData = {};
+                elSide.querySelectorAll('.item').forEach(item => {
+                    newData[item.getAttribute('data-id')] = JSON.parse(item.getAttribute('data-raw'));
+                });
+                await set(ref(db, 'dashboard/sidebar'), newData);
+            }
+        });
+
+        // --- SORTABLE CATEGORY ---
+        const elCat = document.getElementById('cat-list');
+        Sortable.create(elCat, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: async () => {
+                const newData = {};
+                elCat.querySelectorAll('.item').forEach(item => {
+                    newData[item.getAttribute('data-id')] = JSON.parse(item.getAttribute('data-raw'));
+                });
+                await set(ref(db, 'dashboard/categories'), newData);
+            }
+        });
+
+        // --- SORTABLE BUTTONS ---
+        const elBtn = document.getElementById('manage-btn-list');
+        let currentCidForSort = null;
+        Sortable.create(elBtn, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: async () => {
+                if(!currentCidForSort) return;
+                const newData = {};
+                elBtn.querySelectorAll('.item').forEach(item => {
+                    newData[item.getAttribute('data-id')] = JSON.parse(item.getAttribute('data-raw'));
+                });
+                await set(ref(db, `dashboard/categories/${currentCidForSort}/buttons`), newData);
+            }
+        });
+
         window.addSidebar = () => {
-            const ic = document.getElementById('side-icon').value.trim();
             const lb = document.getElementById('side-label').value.trim();
             const ln = document.getElementById('side-link').value.trim();
-            if(lb && ln) {
-                push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln });
-                document.querySelectorAll('#side-icon, #side-label, #side-link').forEach(i => i.value = "");
-            }
+            const ic = document.getElementById('side-icon').value.trim();
+            if(lb && ln) push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln });
         };
 
         onValue(ref(db, 'dashboard/sidebar'), (s) => {
-            const list = document.getElementById('side-list');
-            list.innerHTML = "";
+            elSide.innerHTML = "";
             if(s.exists()){
                 s.forEach(child => {
-                    list.innerHTML += `<div class="item"><span>${child.val().icon} <b>${child.val().label}</b></span><button class="btn-red" onclick="window.delData('dashboard/sidebar/${child.key}')">Hapus</button></div>`;
+                    const item = document.createElement('div');
+                    item.className = 'item';
+                    item.setAttribute('data-id', child.key);
+                    item.setAttribute('data-raw', JSON.stringify(child.val()));
+                    item.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span><span>${child.val().icon} ${child.val().label}</span></div><button class="btn-red" onclick="window.delData('dashboard/sidebar/${child.key}')">Hapus</button>`;
+                    elSide.appendChild(item);
                 });
             }
         });
 
         window.addCategory = () => {
             const n = document.getElementById('cat-name').value.trim();
-            if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
+            if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() });
         };
 
         onValue(ref(db, 'dashboard/categories'), (s) => {
-            const list = document.getElementById('cat-list');
+            elCat.innerHTML = "";
             const selects = document.querySelectorAll('.cat-select-sync');
-            list.innerHTML = "";
             let options = '<option value="">-- Pilih Kategori --</option>';
             if(s.exists()){
                 s.forEach(child => {
-                    list.innerHTML += `<div class="item"><span><b>${child.val().name}</b></span><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button></div>`;
+                    const item = document.createElement('div');
+                    item.className = 'item';
+                    item.setAttribute('data-id', child.key);
+                    item.setAttribute('data-raw', JSON.stringify(child.val()));
+                    item.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span><b>${child.val().name}</b></div><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button>`;
+                    elCat.appendChild(item);
                     options += `<option value="${child.key}">${child.val().name}</option>`;
                 });
             }
@@ -183,22 +235,22 @@
             const ic = document.getElementById('btn-icon').value.trim();
             const lb = document.getElementById('btn-label').value.trim();
             const ln = document.getElementById('btn-link').value.trim();
-            if(cid && lb && ln) {
-                push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln, ts: Date.now() }).then(() => {
-                    Swal.fire("Berhasil", "Tombol Ditambah", "success");
-                    document.querySelectorAll('#btn-icon, #btn-label, #btn-link').forEach(i => i.value = "");
-                });
-            }
+            if(cid && lb && ln) push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln });
         };
 
         window.loadButtonsToManage = (cid) => {
-            const list = document.getElementById('manage-btn-list');
-            if(!cid) { list.innerHTML = ""; return; }
+            currentCidForSort = cid;
+            if(!cid) { elBtn.innerHTML = ""; return; }
             onValue(ref(db, `dashboard/categories/${cid}/buttons`), (s) => {
-                list.innerHTML = "";
+                elBtn.innerHTML = "";
                 if(s.exists()){
                     s.forEach(child => {
-                        list.innerHTML += `<div class="item"><span>${child.val().icon} ${child.val().label}</span><button class="btn-red" onclick="window.delData('dashboard/categories/${cid}/buttons/${child.key}')">Hapus</button></div>`;
+                        const item = document.createElement('div');
+                        item.className = 'item';
+                        item.setAttribute('data-id', child.key);
+                        item.setAttribute('data-raw', JSON.stringify(child.val()));
+                        item.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${child.val().label}</div><button class="btn-red" onclick="window.delData('dashboard/categories/${cid}/buttons/${child.key}')">Hapus</button>`;
+                        elBtn.appendChild(item);
                     });
                 }
             });
@@ -212,37 +264,20 @@
                 let items = [];
                 snap.forEach(c => { items.push({ id: c.key, ...c.val() }); });
                 items.sort((a,b) => b.ts - a.ts);
-                countLabel.innerText = `${items.length} Testimoni Terdaftar`;
+                countLabel.innerText = `${items.length} Testimoni`;
                 items.forEach(t => {
                     const img = (t.photo === 'default' || !t.photo) ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
-                    list.innerHTML += `
-                        <div class="item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                            <div style="display:flex; align-items:center; gap:10px; width:100%;">
-                                <img src="${img}" style="width:30px; height:30px; border-radius:50%; border:1px solid #0ea5e9; object-fit:cover;">
-                                <div style="flex:1;">
-                                    <div style="font-size:13px; font-weight:bold; color:#0ea5e9;">${t.name} <span style="color:#facc15; font-size:10px;">★${t.rating}</span></div>
-                                    <div style="font-size:10px; color:#555;">${t.date}</div>
-                                </div>
-                                <button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button>
-                            </div>
-                            <div style="font-size:12px; color:#ccc; line-height:1.4; background:#000; padding:8px; border-radius:5px; width:100%; box-sizing:border-box;">${t.message}</div>
-                        </div>`;
+                    list.innerHTML += `<div class="item" style="flex-direction:column;align-items:start;gap:10px;"><div style="display:flex;align-items:center;gap:10px;width:100%;"><img src="${img}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"><div style="flex:1;"><div style="font-size:13px;font-weight:bold;color:#0ea5e9;">${t.name} <span style="color:#facc15;font-size:10px;">★${t.rating}</span></div><div style="font-size:10px;color:#555;">${t.date}</div></div><button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button></div><div style="font-size:12px;color:#ccc;background:#000;padding:8px;border-radius:5px;width:100%;box-sizing:border-box;">${t.message}</div></div>`;
                 });
-            } else { countLabel.innerText = "0 Testimoni"; }
+            }
         });
 
-        window.delTesti = (id) => {
-            Swal.fire({ title: "Hapus Testimoni?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
-                if (r.isConfirmed) remove(ref(dbTesti, `testimonies/${id}`));
-            });
-        };
-
         window.delData = (path) => {
-            Swal.fire({ title: "Hapus Data?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
-                if (r.isConfirmed) remove(ref(db, path));
-            });
+            Swal.fire({ title: "Hapus Data?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then(r => { if(r.isConfirmed) remove(ref(db, path)); });
         };
-
+        window.delTesti = (id) => {
+            Swal.fire({ title: "Hapus Testi?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then(r => { if(r.isConfirmed) remove(ref(dbTesti, `testimonies/${id}`)); });
+        };
         checkAccess();
     </script>
 </body>
