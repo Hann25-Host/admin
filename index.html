@@ -7,17 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; min-height: 100vh; margin: 0; }
-        
-        /* Loading Screen biar ga blank item */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #050505; display: flex; justify-content: center; align-items: center;
-            z-index: 9999; flex-direction: column;
-        }
-        .loader { width: 40px; height: 40px; border: 3px solid #111; border-top: 3px solid #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+        body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; min-height: 100vh; }
         .header-area { text-align: center; margin-bottom: 30px; margin-top: 10px; }
         .header-area h1 { letter-spacing: 2px; margin-bottom: 5px; font-size: 24px; }
         .header-area p { color: #666; font-size: 12px; margin-top: 0; }
@@ -25,24 +15,17 @@
         h2 { color: #0ea5e9; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 8px; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none; }
-        
+        input:focus { border-color: #0ea5e9; }
         .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-blue { background: #0ea5e9; color: white; }
+        .btn-blue:hover { background: #0284c7; }
         .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; border: none; cursor: pointer; }
-        
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
-        .drag-handle { cursor: grab; margin-right: 15px; color: #0ea5e9; font-size: 18px; font-weight: bold; }
-        
-        #main-content { display: none; padding-top: 20px; }
+        .drag-handle { cursor: grab; margin-right: 12px; color: #0ea5e9; font-weight: bold; }
+        #main-content { display: none; }
     </style>
 </head>
 <body>
-
-    <div id="loading-screen">
-        <div class="loader"></div>
-        <p style="font-size: 12px; color: #333; margin-top: 15px;">Mengecek Akses...</p>
-    </div>
-
     <div id="main-content">
         <div class="header-area">
             <h1>MANAGER DASHBOARD</h1>
@@ -50,7 +33,7 @@
         </div>
 
         <div class="card">
-            <h2>📑 1. Kelola Sidebar (Geser ☰)</h2>
+            <h2>📑 1. Kelola Sidebar (Tarik ☰)</h2>
             <input type="text" id="side-icon" placeholder="Icon (🏠)">
             <input type="text" id="side-label" placeholder="Nama Menu">
             <input type="text" id="side-link" placeholder="Link Tujuan">
@@ -59,30 +42,30 @@
         </div>
 
         <div class="card">
-            <h2>📂 2. Kelola Kategori (Geser ☰)</h2>
+            <h2>📂 2. Kelola Kategori (Tarik ☰)</h2>
             <input type="text" id="cat-name" placeholder="Nama Kategori Baru">
             <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
             <div id="cat-list" style="margin-top:20px;"></div>
         </div>
 
         <div class="card">
-            <h2>🔘 3. Tambah Tombol Baru</h2>
+            <h2>🔘 3. Tambah Tombol</h2>
             <select class="cat-select-sync"></select>
             <input type="text" id="btn-icon" placeholder="Icon (Emoji/Link)">
             <input type="text" id="btn-label" placeholder="Nama Tombol">
-            <input type="text" id="btn-link" placeholder="https://...">
+            <input type="text" id="btn-link" placeholder="Link (https://...)">
             <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol</button>
         </div>
 
         <div class="card">
-            <h2>🗑️ 4. Urutkan & Hapus Tombol (Geser ☰)</h2>
-            <select class="cat-select-sync" onchange="window.loadButtonsToManage(this.value)"></select>
+            <h2>🗑️ 4. Urutkan & Hapus Tombol (Tarik ☰)</h2>
+            <select class="cat-select-sync" onchange="window.loadButtons(this.value)"></select>
             <div id="manage-btn-list" style="margin-top:20px;"></div>
         </div>
 
         <div class="card">
             <h2>⭐ 5. Kelola Testimoni</h2>
-            <p id="testi-count" style="font-size: 11px; color: #0ea5e9;">Memuat...</p>
+            <p id="testi-count" style="font-size: 11px; color: #0ea5e9;">Loading...</p>
             <div id="testi-admin-list" style="margin-top:20px; max-height: 400px; overflow-y: auto;"></div>
         </div>
     </div>
@@ -92,163 +75,131 @@
         import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-remote-config.js";
 
+        // FIX: Tambahin appId biar ga error Installation
         const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
             authDomain: "adminhann25.firebaseapp.com",
             projectId: "adminhann25",
-            databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app"
+            databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app",
+            appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
         };
 
         const testiConfig = {
             apiKey: "AIzaSyALjgltMZpaRvsXnPywGXx-EcPLTHlt5ME",
-            databaseURL: "https://testimonihann25-default-rtdb.asia-southeast1.firebasedatabase.app"
+            databaseURL: "https://testimonihann25-default-rtdb.asia-southeast1.firebasedatabase.app",
+            appId: "1:222002513476:web:46249257e0520268579d46"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const appTesti = initializeApp(testiConfig, "testiApp");
-        const dbTesti = getDatabase(appTesti);
-        const remoteConfig = getRemoteConfig(app);
-
-        remoteConfig.settings.minimumFetchIntervalMillis = 0;
+        const appT = initializeApp(testiConfig, "testiApp");
+        const dbT = getDatabase(appT);
+        const rc = getRemoteConfig(app);
+        rc.settings.minimumFetchIntervalMillis = 0;
 
         const checkAccess = async () => {
-            try {
-                if (sessionStorage.getItem("__auth") === "true") {
-                    showAdmin();
-                    return;
-                }
-                
-                await fetchAndActivate(remoteConfig);
-                const passkeyBenar = getValue(remoteConfig, "admin_password").asString();
-                
-                // Tutup loading bentar buat nanya password
-                document.getElementById('loading-screen').style.display = 'none';
-
-                const { value: inputPw } = await Swal.fire({
-                    title: 'ADMIN ACCESS',
-                    input: 'password',
-                    background: '#111',
-                    color: '#fff',
-                    confirmButtonColor: '#0ea5e9',
-                    allowOutsideClick: false,
-                    preConfirm: (val) => val === passkeyBenar || Swal.showValidationMessage('Salah!')
-                });
-
-                if (inputPw) {
-                    sessionStorage.setItem("__auth", "true");
-                    showAdmin();
-                }
-            } catch (err) { 
-                console.error(err);
-                Swal.fire("Error", "Gagal konek ke Firebase", "error");
+            if (sessionStorage.getItem("__auth") === "true") {
+                document.getElementById("main-content").style.display = "block";
+                return;
             }
-        };
-
-        function showAdmin() {
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-        }
-
-        // --- SORTABLE LOGIC ---
-        const setupSort = (el, path) => {
-            Sortable.create(el, {
-                handle: '.drag-handle', animation: 150,
-                onEnd: async () => {
-                    const data = {};
-                    el.querySelectorAll('.item').forEach(i => data[i.dataset.id] = JSON.parse(i.dataset.raw));
-                    await set(ref(db, path), data);
+            try {
+                await fetchAndActivate(rc);
+                const pass = getValue(rc, "admin_password").asString();
+                const { value: res } = await Swal.fire({
+                    title: 'ADMIN ACCESS', input: 'password', background: '#111', color: '#fff',
+                    allowOutsideClick: false, preConfirm: (v) => v === pass || Swal.showValidationMessage('Salah!')
+                });
+                if (res) {
+                    sessionStorage.setItem("__auth", "true");
+                    document.getElementById("main-content").style.display = "block";
                 }
-            });
+            } catch (err) { console.error(err); }
         };
 
-        const elSide = document.getElementById('side-list');
-        const elCat = document.getElementById('cat-list');
-        const elBtn = document.getElementById('manage-btn-list');
-        let activeCid = null;
-
-        setupSort(elSide, 'dashboard/sidebar');
-        setupSort(elCat, 'dashboard/categories');
-        Sortable.create(elBtn, {
-            handle: '.drag-handle', animation: 150,
-            onEnd: async () => { if(activeCid) {
+        const setupDrag = (el, path) => {
+            Sortable.create(el, { handle: '.drag-handle', animation: 150, onEnd: async () => {
                 const data = {};
-                elBtn.querySelectorAll('.item').forEach(i => data[i.dataset.id] = JSON.parse(i.dataset.raw));
-                await set(ref(db, `dashboard/categories/${activeCid}/buttons`), data);
-            }}
-        });
+                el.querySelectorAll('.item').forEach(i => data[i.dataset.id] = JSON.parse(i.dataset.raw));
+                await set(ref(db, path), data);
+            }});
+        };
 
-        // --- DATABASE SYNC ---
+        const elS = document.getElementById('side-list'), elC = document.getElementById('cat-list'), elB = document.getElementById('manage-btn-list');
+        let curCid = null;
+
+        setupDrag(elS, 'dashboard/sidebar');
+        setupDrag(elC, 'dashboard/categories');
+        Sortable.create(elB, { handle: '.drag-handle', animation: 150, onEnd: async () => {
+            if(!curCid) return;
+            const data = {};
+            elB.querySelectorAll('.item').forEach(i => data[i.dataset.id] = JSON.parse(i.dataset.raw));
+            await set(ref(db, `dashboard/categories/${curCid}/buttons`), data);
+        }});
+
         window.addSidebar = () => {
-            const lb = document.getElementById('side-label').value.trim();
-            const ln = document.getElementById('side-link').value.trim();
-            const ic = document.getElementById('side-icon').value.trim();
-            if(lb && ln) push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln });
+            const i = document.getElementById('side-icon').value, l = document.getElementById('side-label').value, u = document.getElementById('side-link').value;
+            if(l && u) push(ref(db, 'dashboard/sidebar'), { icon: i || '📍', label: l, link: u });
         };
 
         onValue(ref(db, 'dashboard/sidebar'), (s) => {
-            elSide.innerHTML = "";
+            elS.innerHTML = "";
             if(s.exists()) s.forEach(c => {
-                const div = document.createElement('div'); div.className = 'item'; div.dataset.id = c.key; div.dataset.raw = JSON.stringify(c.val());
-                div.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${c.val().icon} ${c.val().label}</div><button class="btn-red" onclick="window.del('dashboard/sidebar/${c.key}')">Hapus</button>`;
-                elSide.appendChild(div);
+                const d = document.createElement('div'); d.className = 'item'; d.dataset.id = c.key; d.dataset.raw = JSON.stringify(c.val());
+                d.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${c.val().icon} <b>${c.val().label}</b></div><button class="btn-red" onclick="window.delData('dashboard/sidebar/${c.key}')">Hapus</button>`;
+                elS.appendChild(d);
             });
         });
 
         window.addCategory = () => {
-            const n = document.getElementById('cat-name').value.trim();
+            const n = document.getElementById('cat-name').value;
             if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() });
         };
 
         onValue(ref(db, 'dashboard/categories'), (s) => {
-            elCat.innerHTML = "";
+            elC.innerHTML = "";
             let opts = '<option value="">-- Pilih Kategori --</option>';
             if(s.exists()) s.forEach(c => {
-                const div = document.createElement('div'); div.className = 'item'; div.dataset.id = c.key; div.dataset.raw = JSON.stringify(c.val());
-                div.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${c.val().name}</div><button class="btn-red" onclick="window.del('dashboard/categories/${c.key}')">Hapus</button>`;
-                elCat.appendChild(div);
+                const d = document.createElement('div'); d.className = 'item'; d.dataset.id = c.key; d.dataset.raw = JSON.stringify(c.val());
+                d.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span><b>${c.val().name}</b></div><button class="btn-red" onclick="window.delData('dashboard/categories/${c.key}')">Hapus</button>`;
+                elC.appendChild(d);
                 opts += `<option value="${c.key}">${c.val().name}</option>`;
             });
             document.querySelectorAll('.cat-select-sync').forEach(sel => sel.innerHTML = opts);
         });
 
         window.addButton = () => {
-            const cid = document.querySelector('select.cat-select-sync').value;
-            const lb = document.getElementById('btn-label').value.trim();
-            const ln = document.getElementById('btn-link').value.trim();
-            const ic = document.getElementById('btn-icon').value.trim();
-            if(cid && lb && ln) push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln });
+            const cid = document.querySelector('select.cat-select-sync').value, l = document.getElementById('btn-label').value, u = document.getElementById('btn-link').value, i = document.getElementById('btn-icon').value;
+            if(cid && l && u) push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: i || '🔗', label: l, link: u });
         };
 
-        window.loadButtonsToManage = (cid) => {
-            activeCid = cid;
-            if(!cid) { elBtn.innerHTML = ""; return; }
+        window.loadButtons = (cid) => {
+            curCid = cid;
+            if(!cid) return elB.innerHTML = "";
             onValue(ref(db, `dashboard/categories/${cid}/buttons`), (s) => {
-                elBtn.innerHTML = "";
+                elB.innerHTML = "";
                 if(s.exists()) s.forEach(c => {
-                    const div = document.createElement('div'); div.className = 'item'; div.dataset.id = c.key; div.dataset.raw = JSON.stringify(c.val());
-                    div.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${c.val().label}</div><button class="btn-red" onclick="window.del('dashboard/categories/${activeCid}/buttons/${c.key}')">Hapus</button>`;
-                    elBtn.appendChild(div);
+                    const d = document.createElement('div'); d.className = 'item'; d.dataset.id = c.key; d.dataset.raw = JSON.stringify(c.val());
+                    d.innerHTML = `<div style="display:flex;align-items:center;"><span class="drag-handle">☰</span>${c.val().label}</div><button class="btn-red" onclick="window.delData('dashboard/categories/${curCid}/buttons/${c.key}')">Hapus</button>`;
+                    elB.appendChild(d);
                 });
             });
         };
 
-        onValue(ref(dbTesti, 'testimonies'), (snap) => {
-            const list = document.getElementById('testi-admin-list');
-            list.innerHTML = "";
-            if(snap.exists()){
-                let items = []; snap.forEach(c => items.push({ id: c.key, ...c.val() }));
-                items.sort((a,b) => b.ts - a.ts);
-                document.getElementById('testi-count').innerText = `${items.length} Testimoni`;
-                items.forEach(t => {
-                    const img = (t.photo === 'default' || !t.photo) ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
-                    list.innerHTML += `<div class="item" style="flex-direction:column;align-items:start;"><div style="display:flex;align-items:center;gap:10px;width:100%;"><img src="${img}" style="width:30px;height:30px;border-radius:50%;"><div style="flex:1;"><b>${t.name}</b></div><button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button></div></div>`;
+        onValue(ref(dbT, 'testimonies'), (s) => {
+            const l = document.getElementById('testi-admin-list'); l.innerHTML = "";
+            if(s.exists()) {
+                let a = []; s.forEach(c => a.push({id: c.key, ...c.val()}));
+                a.sort((x,y) => y.ts - x.ts);
+                document.getElementById('testi-count').innerText = `${a.length} Testimoni`;
+                a.forEach(t => {
+                    const p = t.photo === 'default' ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
+                    l.innerHTML += `<div class="item" style="flex-direction:column;align-items:start;"><div style="display:flex;align-items:center;gap:10px;width:100%;"><img src="${p}" style="width:30px;height:30px;border-radius:50%;"><div style="flex:1;"><b>${t.name}</b></div><button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button></div></div>`;
                 });
             }
         });
 
-        window.del = (path) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(db, path)));
-        window.delTesti = (id) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(dbTesti, `testimonies/${id}`)));
+        window.delData = (p) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(db, p)));
+        window.delTesti = (id) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(dbT, `testimonies/${id}`)));
 
         checkAccess();
     </script>
