@@ -11,68 +11,117 @@
         h2 { color: #0ea5e9; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 8px; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none; }
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        input:focus { border-color: #0ea5e9; }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-blue { background: #0ea5e9; color: white; }
-        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; border-radius: 5px; }
+        .btn-blue:hover { background: #0284c7; }
+        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
     </style>
 </head>
-<body id="admin-body" style="display:none;">
+<body id="main-content" style="display:none;">
     <div class="card">
-        <h2>👤 PROFIL</h2>
-        <input type="text" id="set-logo" placeholder="URL Logo">
-        <input type="text" id="set-name" placeholder="Nama Brand">
-        <button class="btn btn-blue" onclick="saveProfile()">Update Profil</button>
+        <h2>👤 0. Pengaturan Profil</h2>
+        <label>URL Foto Profil (Logo)</label>
+        <input type="text" id="set-logo" placeholder="https://link-foto.com/logo.jpg">
+        <label>Nama Brand (Judul Utama)</label>
+        <input type="text" id="set-name" placeholder="Contoh: HANN 25">
+        <button class="btn btn-blue" onclick="window.saveProfile()">Update Profil</button>
+    </div>
+
+    <div style="text-align:center; margin-bottom: 30px;">
+        <h1 style="letter-spacing: 2px;">MANAGER DASHBOARD</h1>
+        <p style="color:#666; font-size: 12px;">Update konten tanpa edit kode HTML</p>
     </div>
 
     <div class="card">
-        <h2>📂 KATEGORI</h2>
-        <input type="text" id="cat-name" placeholder="Nama Kategori">
-        <button class="btn btn-blue" onclick="addCategory()">Tambah</button>
+        <h2>📂 1. Kelola Kategori</h2>
+        <label>Nama Kategori Baru</label>
+        <input type="text" id="cat-name" placeholder="Contoh: KONTAK / SOSIAL MEDIA">
+        <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
         <div id="cat-list" style="margin-top:20px;"></div>
     </div>
 
     <div class="card">
-        <h2>🔘 TOMBOL</h2>
+        <h2>🔘 2. Tambah Tombol</h2>
+        <label>Pilih Kategori</label>
         <select id="select-cat"></select>
-        <input type="text" id="btn-icon" placeholder="Emoji/Icon">
-        <input type="text" id="btn-label" placeholder="Label">
-        <input type="text" id="btn-link" placeholder="Link">
-        <button class="btn btn-blue" onclick="addButton()">Simpan</button>
+        <label>Icon / Emoji</label>
+        <input type="text" id="btn-icon" placeholder="💬">
+        <label>Nama Tombol</label>
+        <input type="text" id="btn-label" placeholder="WhatsApp Utama">
+        <label>Link Tujuan</label>
+        <input type="text" id="btn-link" placeholder="https://wa.me/...">
+        <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol</button>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const hashCheck = async (str, key) => {
-        const enc = new TextEncoder();
-        const cryptoKey = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-        const signature = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(str));
-        return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
-    };
+    async function _0xhash(_0xstr, _0xkey) {
+        const _0xenc = new TextEncoder();
+        const _0xk = await crypto.subtle.importKey('raw', _0xenc.encode(_0xkey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const _0xsig = await crypto.subtle.sign('HMAC', _0xk, _0xenc.encode(_0xstr));
+        return Array.from(new Uint8Array(_0xsig)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
-    const init = async () => {
-        const target = "77196020581335091726a84c680875e533088730999596486060609355428943";
+    const _0xrun = async () => {
+        const _0xtarget = "77196020581335091726a84c680875e533088730999596486060609355428943";
         
         if (sessionStorage.getItem("__auth") !== "true") {
-            const pw = prompt("PASSKEY:");
-            if (!pw) return;
-            
-            const result = await hashCheck(pw, "170408");
-            if (result === target) {
+            const { value: _0xin } = await Swal.fire({
+                title: 'ADMIN ACCESS',
+                input: 'password',
+                inputLabel: 'Masukkan Passkey Admin:',
+                inputPlaceholder: 'Type here...',
+                background: '#111',
+                color: '#fff',
+                confirmButtonColor: '#0ea5e9',
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                preConfirm: async (_0xval) => {
+                    const _0xres = await _0xhash(_0xval, "170408");
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            if (_0xres === _0xtarget) {
+                                resolve(true);
+                            } else {
+                                Swal.showValidationMessage('Passkey Salah, Kocak!');
+                                resolve(false);
+                            }
+                        }, 1500);
+                    });
+                }
+            });
+
+            if (_0xin) {
                 sessionStorage.setItem("__auth", "true");
-                document.getElementById("admin-body").style.display = "block";
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Akses Diberikan!',
+                    text: 'Welcome back, Hann!',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#111',
+                    color: '#fff'
+                });
+                document.getElementById("main-content").style.display = "block";
             } else {
-                document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>😡🖕</h1><p>LU MAU NGAPAIN TOLOL?</p><button onclick='location.reload()'>Coba Lagi</button></div>";
+                document.body.innerHTML = `
+                    <div style="text-align:center; margin-top:100px; color:red; font-family:sans-serif;">
+                        <h1>😡🖕</h1>
+                        <p>LU MAU NGAPAIN TOLOL?</p>
+                        <button onclick="location.reload()" style="padding:10px 20px; background:#0ea5e9; color:white; border:none; border-radius:5px; cursor:pointer;">Coba Lagi</button>
+                    </div>`;
                 document.body.style.display = "block";
                 return;
             }
         } else {
-            document.getElementById("admin-body").style.display = "block";
+            document.getElementById("main-content").style.display = "block";
         }
 
-        const conf = {
+        const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
             authDomain: "adminhann25.firebaseapp.com",
             projectId: "adminhann25",
@@ -82,48 +131,62 @@
             appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
         };
 
-        const app = initializeApp(conf);
+        const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         window.saveProfile = () => {
-            const l = document.getElementById('set-logo').value, n = document.getElementById('set-name').value;
-            if(l && n) set(ref(db, 'dashboard/profile'), { logo: l, name: n }).then(() => Swal.fire("Ok", "", "success"));
+            const logo = document.getElementById('set-logo').value;
+            const name = document.getElementById('set-name').value;
+            if(!logo || !name) return Swal.fire("Waduh", "Isi semua!", "warning");
+            set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Berhasil!", "Profil update", "success"));
         };
 
-        onValue(ref(db, 'dashboard/profile'), (s) => {
-            if(s.exists()){
-                document.getElementById('set-logo').value = s.val().logo;
-                document.getElementById('set-name').value = s.val().name;
+        onValue(ref(db, 'dashboard/profile'), (snap) => {
+            if(snap.exists()){
+                document.getElementById('set-logo').value = snap.val().logo || "";
+                document.getElementById('set-name').value = snap.val().name || "";
             }
         });
 
         window.addCategory = () => {
-            const n = document.getElementById('cat-name').value.trim();
-            if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
+            const name = document.getElementById('cat-name').value.trim();
+            if(!name) return;
+            push(ref(db, 'dashboard/categories'), { name: name.toUpperCase() }).then(() => {
+                document.getElementById('cat-name').value = "";
+            });
         };
 
-        onValue(ref(db, 'dashboard/categories'), (s) => {
-            const l = document.getElementById('cat-list'), sc = document.getElementById('select-cat');
-            l.innerHTML = ""; sc.innerHTML = "<option value=''>-- Pilih Kategori --</option>";
-            if(s.exists()){
-                s.forEach(c => {
-                    l.innerHTML += `<div class="item"><span>${c.val().name}</span><button class="btn-red" onclick="del('dashboard/categories/${c.key}')">Hapus</button></div>`;
-                    sc.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
+        onValue(ref(db, 'dashboard/categories'), (snap) => {
+            const list = document.getElementById('cat-list');
+            const select = document.getElementById('select-cat');
+            list.innerHTML = "";
+            select.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+            if(snap.exists()){
+                snap.forEach(child => {
+                    const data = child.val();
+                    list.innerHTML += `<div class="item"><span><b>${data.name}</b></span><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button></div>`;
+                    select.innerHTML += `<option value="${child.key}">${data.name}</option>`;
                 });
             }
         });
 
         window.addButton = () => {
-            const id = document.getElementById('select-cat').value, i = document.getElementById('btn-icon').value, lb = document.getElementById('btn-label').value, ln = document.getElementById('btn-link').value;
-            if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln });
+            const catId = document.getElementById('select-cat').value;
+            const icon = document.getElementById('btn-icon').value.trim();
+            const label = document.getElementById('btn-label').value.trim();
+            const link = document.getElementById('btn-link').value.trim();
+            if(!catId || !label || !link) return;
+            push(ref(db, `dashboard/categories/${catId}/buttons`), { icon: icon || '🔗', label, link, ts: Date.now() });
         };
 
-        window.del = (p) => {
-            Swal.fire({title: "Hapus?", showCancelButton: true}).then((r) => { if(r.isConfirmed) remove(ref(db, p)); });
+        window.delData = (path) => {
+            Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((result) => {
+                if (result.isConfirmed) remove(ref(db, path));
+            });
         };
     };
 
-    init();
+    _0xrun();
 </script>
 </body>
 </html>
