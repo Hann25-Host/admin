@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HANN - ADMIN DASHBOARD</title>
+    <title>HANN 25 - ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; }
@@ -11,138 +11,113 @@
         h2 { color: #0ea5e9; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 8px; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #0ea5e9; }
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
         .btn-blue { background: #0ea5e9; color: white; }
-        .btn-blue:hover { background: #0284c7; }
-        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; }
+        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; border-radius: 5px; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
-        .btn-group { display: flex; gap: 5px; }
     </style>
 </head>
 <body>
-
-    <div style="text-align:center; margin-bottom: 30px;">
-        <h1 style="letter-spacing: 2px;">MANAGER DASHBOARD</h1>
-        <p style="color:#666; font-size: 12px;">Update konten tanpa edit kode HTML</p>
+    <div class="card">
+        <h2>👤 PROFIL</h2>
+        <input type="text" id="set-logo" placeholder="URL Logo">
+        <input type="text" id="set-name" placeholder="Nama Brand">
+        <button class="btn btn-blue" onclick="saveProfile()">Update Profil</button>
     </div>
 
     <div class="card">
-        <h2>📂 1. Kelola Kategori</h2>
-        <label>Nama Kategori Baru</label>
-        <input type="text" id="cat-name" placeholder="Contoh: KONTAK / SOSIAL MEDIA">
-        <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
-        
-        <div id="cat-list" style="margin-top:20px;">
-            </div>
+        <h2>📂 KATEGORI</h2>
+        <input type="text" id="cat-name" placeholder="Nama Kategori">
+        <button class="btn btn-blue" onclick="addCategory()">Tambah</button>
+        <div id="cat-list" style="margin-top:20px;"></div>
     </div>
 
     <div class="card">
-        <h2>🔘 2. Tambah Tombol</h2>
-        <label>Pilih Kategori</label>
-        <select id="select-cat">
-            <option value="">-- Pilih Kategori --</option>
-        </select>
-
-        <label>Icon / Emoji</label>
-        <input type="text" id="btn-icon" placeholder="Contoh: 💬 atau https://link-foto.com/icon.png">
-
-        <label>Nama Tombol</label>
-        <input type="text" id="btn-label" placeholder="Contoh: WhatsApp Utama">
-
-        <label>Link Tujuan</label>
-        <input type="text" id="btn-link" placeholder="Contoh: https://wa.me/...">
-
-        <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol ke Dashboard</button>
+        <h2>🔘 TOMBOL</h2>
+        <select id="select-cat"></select>
+        <input type="text" id="btn-icon" placeholder="Emoji/Icon">
+        <input type="text" id="btn-label" placeholder="Label">
+        <input type="text" id="btn-link" placeholder="Link">
+        <button class="btn btn-blue" onclick="addButton()">Simpan</button>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // PAKAI CONFIG BARU LU
-    const firebaseConfig = {
+    async function _0x4a(_0x1b, _0x5d) {
+        const _0x7f = new TextEncoder();
+        const _0x2c = await crypto.subtle.importKey('raw', _0x7f.encode(_0x5d), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const _0x9e = await crypto.subtle.sign('HMAC', _0x2c, _0x7f.encode(_0x1b));
+        return Array.from(new Uint8Array(_0x9e)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    if (sessionStorage.getItem("__auth") !== "true") {
+        let _0xp = prompt("PASSKEY:");
+        if (_0xp) {
+            const _0xr = await _0x4a(_0xp, "170408");
+            if (_0xr === "77196020581335091726a84c680875e533088730999596486060609355428943") {
+                sessionStorage.setItem("__auth", "true");
+            } else {
+                document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>🛑 403</h1><p>LU MAU NGAPAIN TOLOL?</p></div>";
+                throw new Error();
+            }
+        } else {
+            document.body.innerHTML = "";
+            throw new Error();
+        }
+    }
+
+    const conf = {
         apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
         authDomain: "adminhann25.firebaseapp.com",
         projectId: "adminhann25",
-        databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app", // Sesuaikan URL DB lu
+        databaseURL: "https://adminhann25-default-rtdb.asia-southeast1.firebasedatabase.app",
         storageBucket: "adminhann25.firebasestorage.app",
         messagingSenderId: "1020946488981",
         appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
     };
 
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(conf);
     const db = getDatabase(app);
 
-    // --- FUNGSI KATEGORI ---
-    window.addCategory = () => {
-        const name = document.getElementById('cat-name').value.trim();
-        if(!name) return Swal.fire("Error", "Nama kategori jangan kosong!", "error");
-        
-        push(ref(db, 'dashboard/categories'), { name: name.toUpperCase() })
-        .then(() => {
-            document.getElementById('cat-name').value = "";
-            Swal.fire("Sip!", "Kategori berhasil dibuat", "success");
-        });
+    window.saveProfile = () => {
+        const logo = document.getElementById('set-logo').value;
+        const name = document.getElementById('set-name').value;
+        if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Ok", "", "success"));
     };
 
-    onValue(ref(db, 'dashboard/categories'), (snap) => {
-        const list = document.getElementById('cat-list');
-        const select = document.getElementById('select-cat');
-        list.innerHTML = "";
-        select.innerHTML = '<option value="">-- Pilih Kategori --</option>';
-        
-        if(snap.exists()){
-            snap.forEach(child => {
-                const data = child.val();
-                // Tampilkan di list kelola
-                list.innerHTML += `
-                    <div class="item">
-                        <span><b>${data.name}</b></span>
-                        <button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button>
-                    </div>`;
-                // Masukkan ke dropdown pilihan kategori
-                select.innerHTML += `<option value="${child.key}">${data.name}</option>`;
+    onValue(ref(db, 'dashboard/profile'), (s) => {
+        if(s.exists()){
+            document.getElementById('set-logo').value = s.val().logo;
+            document.getElementById('set-name').value = s.val().name;
+        }
+    });
+
+    window.addCategory = () => {
+        const n = document.getElementById('cat-name').value.trim();
+        if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
+    };
+
+    onValue(ref(db, 'dashboard/categories'), (s) => {
+        const l = document.getElementById('cat-list'), sc = document.getElementById('select-cat');
+        l.innerHTML = ""; sc.innerHTML = "";
+        if(s.exists()){
+            s.forEach(c => {
+                l.innerHTML += `<div class="item"><span>${c.val().name}</span><button class="btn-red" onclick="del('dashboard/categories/${c.key}')">Hapus</button></div>`;
+                sc.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
             });
         }
     });
 
-    // --- FUNGSI TOMBOL ---
     window.addButton = () => {
-        const catId = document.getElementById('select-cat').value;
-        const icon = document.getElementById('btn-icon').value.trim();
-        const label = document.getElementById('btn-label').value.trim();
-        const link = document.getElementById('btn-link').value.trim();
-        
-        if(!catId || !label || !link) return Swal.fire("Waduh", "Kategori, Nama, dan Link harus diisi!", "warning");
-        
-        push(ref(db, `dashboard/categories/${catId}/buttons`), { 
-            icon: icon || '🔗', 
-            label, 
-            link,
-            ts: Date.now() 
-        })
-        .then(() => {
-            document.getElementById('btn-icon').value = "";
-            document.getElementById('btn-label').value = "";
-            document.getElementById('btn-link').value = "";
-            Swal.fire("Berhasil!", "Tombol sudah masuk ke Dashboard", "success");
-        });
+        const id = document.getElementById('select-cat').value, i = document.getElementById('btn-icon').value, lb = document.getElementById('btn-label').value, ln = document.getElementById('btn-link').value;
+        if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln });
     };
 
-    window.delData = (path) => {
-        Swal.fire({
-            title: "Yakin dihapus?",
-            text: "Data ini bakal hilang dari Dashboard!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#ff4757",
-            confirmButtonText: "Ya, Hapus!"
-        }).then((result) => {
-            if (result.isConfirmed) remove(ref(db, path));
-        });
+    window.del = (p) => {
+        Swal.fire({title: "Hapus?", showCancelButton: true}).then((r) => { if(r.isConfirmed) remove(ref(db, p)); });
     };
 </script>
 </body>
 </html>
-
