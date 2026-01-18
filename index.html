@@ -75,20 +75,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        async function createHash(str) {
-            const msgBuffer = new TextEncoder().encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
         const checkAccess = async () => {
             if (sessionStorage.getItem("__auth") === "true") {
                 document.getElementById("main-content").style.display = "block";
                 return;
             }
 
-            const targetHash = "97701768858e772418a00693510f88647000e39b7a42169604df012c85e254e0";
+            const key = "am9qb2hhbm4yNQ=="; 
 
             const { value: inputPw } = await Swal.fire({
                 title: 'ADMIN ACCESS',
@@ -98,22 +91,17 @@
                 color: '#fff',
                 confirmButtonColor: '#0ea5e9',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    const input = Swal.getInput();
-                    if (input) input.focus();
-                },
                 showLoaderOnConfirm: true,
-                preConfirm: async (val) => {
-                    const hashedInput = await createHash(val);
+                preConfirm: (val) => {
                     return new Promise((resolve) => {
                         setTimeout(() => {
-                            if (hashedInput === targetHash) {
+                            if (btoa(val) === key) {
                                 resolve(true);
                             } else {
                                 Swal.showValidationMessage('Password Salah Kocak!');
                                 resolve(false);
                             }
-                        }, 800);
+                        }, 1000);
                     });
                 }
             });
@@ -121,14 +109,7 @@
             if (inputPw) {
                 sessionStorage.setItem("__auth", "true");
                 document.getElementById("main-content").style.display = "block";
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: 'Berhasil!', 
-                    timer: 800, 
-                    showConfirmButton: false, 
-                    background: '#111', 
-                    color: '#fff' 
-                });
+                Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
             }
         };
 
