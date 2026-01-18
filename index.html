@@ -17,7 +17,7 @@
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
     </style>
 </head>
-<body>
+<body id="admin-body" style="display:none;">
     <div class="card">
         <h2>👤 PROFIL</h2>
         <input type="text" id="set-logo" placeholder="URL Logo">
@@ -45,29 +45,31 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    async function _0x4a(_0x1b, _0x5d) {
-        const _0x7f = new TextEncoder();
-        const _0x2c = await crypto.subtle.importKey('raw', _0x7f.encode(_0x5d), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-        const _0x9e = await crypto.subtle.sign('HMAC', _0x2c, _0x7f.encode(_0x1b));
-        return Array.from(new Uint8Array(_0x9e)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+    const hashCheck = async (str, key) => {
+        const enc = new TextEncoder();
+        const cryptoKey = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const signature = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(str));
+        return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+    };
 
-    const start = async () => {
+    const init = async () => {
+        const target = "77196020581335091726a84c680875e533088730999596486060609355428943";
+        
         if (sessionStorage.getItem("__auth") !== "true") {
-            let _0xp = prompt("PASSKEY:");
-            if (_0xp) {
-                const _0xr = await _0x4a(_0xp, "170408");
-                if (_0xr === "77196020581335091726a84c680875e533088730999596486060609355428943") {
-                    sessionStorage.setItem("__auth", "true");
-                    location.reload();
-                } else {
-                    document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>😡🖕</h1><p>LU MAU NGAPAIN TOLOL?</p><button onclick='location.reload()'>Coba Lagi</button></div>";
-                    return;
-                }
+            const pw = prompt("PASSKEY:");
+            if (!pw) return;
+            
+            const result = await hashCheck(pw, "170408");
+            if (result === target) {
+                sessionStorage.setItem("__auth", "true");
+                document.getElementById("admin-body").style.display = "block";
             } else {
-                document.body.innerHTML = "";
+                document.body.innerHTML = "<div style='text-align:center;margin-top:100px;'><h1>😡🖕</h1><p>LU MAU NGAPAIN TOLOL?</p><button onclick='location.reload()'>Coba Lagi</button></div>";
+                document.body.style.display = "block";
                 return;
             }
+        } else {
+            document.getElementById("admin-body").style.display = "block";
         }
 
         const conf = {
@@ -84,9 +86,8 @@
         const db = getDatabase(app);
 
         window.saveProfile = () => {
-            const logo = document.getElementById('set-logo').value;
-            const name = document.getElementById('set-name').value;
-            if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Sip!", "Profil Update", "success"));
+            const l = document.getElementById('set-logo').value, n = document.getElementById('set-name').value;
+            if(l && n) set(ref(db, 'dashboard/profile'), { logo: l, name: n }).then(() => Swal.fire("Ok", "", "success"));
         };
 
         onValue(ref(db, 'dashboard/profile'), (s) => {
@@ -114,7 +115,7 @@
 
         window.addButton = () => {
             const id = document.getElementById('select-cat').value, i = document.getElementById('btn-icon').value, lb = document.getElementById('btn-label').value, ln = document.getElementById('btn-link').value;
-            if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln }).then(() => Swal.fire("Berhasil", "Tombol Ditambah", "success"));
+            if(id && lb && ln) push(ref(db, `dashboard/categories/${id}/buttons`), { icon: i || '🔗', label: lb, link: ln });
         };
 
         window.del = (p) => {
@@ -122,7 +123,7 @@
         };
     };
 
-    start();
+    init();
 </script>
 </body>
 </html>
