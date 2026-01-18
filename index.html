@@ -6,7 +6,7 @@
     <title>HANN 25 - ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; }
+        body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; min-height: 100vh; }
         .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; max-width: 600px; margin-inline: auto; }
         h2 { color: #0ea5e9; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; margin-top: 10px; }
@@ -15,111 +15,52 @@
         .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-blue { background: #0ea5e9; color: white; }
         .btn-blue:hover { background: #0284c7; }
-        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; }
+        .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; border: none; cursor: pointer; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
+        #main-content { display: none; }
     </style>
 </head>
-<body id="main-content" style="display:none;">
-    <div class="card">
-        <h2>👤 0. Pengaturan Profil</h2>
-        <label>URL Foto Profil (Logo)</label>
-        <input type="text" id="set-logo" placeholder="https://link-foto.com/logo.jpg">
-        <label>Nama Brand (Judul Utama)</label>
-        <input type="text" id="set-name" placeholder="Contoh: HANN 25">
-        <button class="btn btn-blue" onclick="window.saveProfile()">Update Profil</button>
+<body>
+    <div id="main-content">
+        <div class="card">
+            <h2>👤 0. Pengaturan Profil</h2>
+            <label>URL Foto Profil (Logo)</label>
+            <input type="text" id="set-logo" placeholder="https://link-foto.com/logo.jpg">
+            <label>Nama Brand (Judul Utama)</label>
+            <input type="text" id="set-name" placeholder="Contoh: HANN 25">
+            <button class="btn btn-blue" onclick="window.saveProfile()">Update Profil</button>
+        </div>
+
+        <div style="text-align:center; margin-bottom: 30px;">
+            <h1 style="letter-spacing: 2px;">MANAGER DASHBOARD</h1>
+            <p style="color:#666; font-size: 12px;">Update konten tanpa edit kode HTML</p>
+        </div>
+
+        <div class="card">
+            <h2>📂 1. Kelola Kategori</h2>
+            <label>Nama Kategori Baru</label>
+            <input type="text" id="cat-name" placeholder="Contoh: KONTAK / SOSIAL MEDIA">
+            <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
+            <div id="cat-list" style="margin-top:20px;"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔘 2. Tambah Tombol</h2>
+            <label>Pilih Kategori</label>
+            <select id="select-cat"></select>
+            <label>Icon / Emoji</label>
+            <input type="text" id="btn-icon" placeholder="💬">
+            <label>Nama Tombol</label>
+            <input type="text" id="btn-label" placeholder="WhatsApp Utama">
+            <label>Link Tujuan</label>
+            <input type="text" id="btn-link" placeholder="https://wa.me/...">
+            <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol</button>
+        </div>
     </div>
 
-    <div style="text-align:center; margin-bottom: 30px;">
-        <h1 style="letter-spacing: 2px;">MANAGER DASHBOARD</h1>
-        <p style="color:#666; font-size: 12px;">Update konten tanpa edit kode HTML</p>
-    </div>
-
-    <div class="card">
-        <h2>📂 1. Kelola Kategori</h2>
-        <label>Nama Kategori Baru</label>
-        <input type="text" id="cat-name" placeholder="Contoh: KONTAK / SOSIAL MEDIA">
-        <button class="btn btn-blue" onclick="window.addCategory()">Tambah Kategori</button>
-        <div id="cat-list" style="margin-top:20px;"></div>
-    </div>
-
-    <div class="card">
-        <h2>🔘 2. Tambah Tombol</h2>
-        <label>Pilih Kategori</label>
-        <select id="select-cat"></select>
-        <label>Icon / Emoji</label>
-        <input type="text" id="btn-icon" placeholder="💬">
-        <label>Nama Tombol</label>
-        <input type="text" id="btn-label" placeholder="WhatsApp Utama">
-        <label>Link Tujuan</label>
-        <input type="text" id="btn-link" placeholder="https://wa.me/...">
-        <button class="btn btn-blue" onclick="window.addButton()">Simpan Tombol</button>
-    </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    async function _0xhash(_0xstr, _0xkey) {
-        const _0xenc = new TextEncoder();
-        const _0xk = await crypto.subtle.importKey('raw', _0xenc.encode(_0xkey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-        const _0xsig = await crypto.subtle.sign('HMAC', _0xk, _0xenc.encode(_0xstr));
-        return Array.from(new Uint8Array(_0xsig)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    const _0xrun = async () => {
-        const _0xtarget = "77196020581335091726a84c680875e533088730999596486060609355428943";
-        
-        if (sessionStorage.getItem("__auth") !== "true") {
-            const { value: _0xin } = await Swal.fire({
-                title: 'ADMIN ACCESS',
-                input: 'password',
-                inputLabel: 'Masukkan Passkey Admin:',
-                inputPlaceholder: 'Type here...',
-                background: '#111',
-                color: '#fff',
-                confirmButtonColor: '#0ea5e9',
-                allowOutsideClick: false,
-                showLoaderOnConfirm: true,
-                preConfirm: async (_0xval) => {
-                    const _0xres = await _0xhash(_0xval, "170408");
-                    return new Promise((resolve) => {
-                        setTimeout(() => {
-                            if (_0xres === _0xtarget) {
-                                resolve(true);
-                            } else {
-                                Swal.showValidationMessage('Passkey Salah, Kocak!');
-                                resolve(false);
-                            }
-                        }, 1500);
-                    });
-                }
-            });
-
-            if (_0xin) {
-                sessionStorage.setItem("__auth", "true");
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Akses Diberikan!',
-                    text: 'Welcome back, Hann!',
-                    timer: 1500,
-                    showConfirmButton: false,
-                    background: '#111',
-                    color: '#fff'
-                });
-                document.getElementById("main-content").style.display = "block";
-            } else {
-                document.body.innerHTML = `
-                    <div style="text-align:center; margin-top:100px; color:red; font-family:sans-serif;">
-                        <h1>😡🖕</h1>
-                        <p>LU MAU NGAPAIN TOLOL?</p>
-                        <button onclick="location.reload()" style="padding:10px 20px; background:#0ea5e9; color:white; border:none; border-radius:5px; cursor:pointer;">Coba Lagi</button>
-                    </div>`;
-                document.body.style.display = "block";
-                return;
-            }
-        } else {
-            document.getElementById("main-content").style.display = "block";
-        }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
@@ -134,59 +75,103 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        async function _0xhash(_0xstr, _0xkey) {
+            const _0xenc = new TextEncoder();
+            const _0xk = await crypto.subtle.importKey('raw', _0xenc.encode(_0xkey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+            const _0xsig = await crypto.subtle.sign('HMAC', _0xk, _0xenc.encode(_0xstr));
+            return Array.from(new Uint8Array(_0xsig)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        const _0xrun = async () => {
+            const _0xtarget = "77196020581335091726a84c680875e533088730999596486060609355428943";
+            
+            if (sessionStorage.getItem("__auth") !== "true") {
+                const { value: _0xin } = await Swal.fire({
+                    title: 'ADMIN ACCESS',
+                    input: 'password',
+                    inputLabel: 'Passkey Admin:',
+                    background: '#111',
+                    color: '#fff',
+                    confirmButtonColor: '#0ea5e9',
+                    allowOutsideClick: false,
+                    showLoaderOnConfirm: true,
+                    preConfirm: async (loginValue) => {
+                        const hashed = await _0xhash(loginValue, "170408");
+                        return new Promise((resolve) => {
+                            setTimeout(() => {
+                                if (hashed === _0xtarget) {
+                                    resolve(loginValue);
+                                } else {
+                                    Swal.showValidationMessage('Passkey Salah, Kocak!');
+                                    resolve(null);
+                                }
+                            }, 1000);
+                        });
+                    }
+                });
+
+                if (_0xin) {
+                    sessionStorage.setItem("__auth", "true");
+                    document.getElementById("main-content").style.display = "block";
+                } else {
+                    document.body.innerHTML = `
+                        <div style="text-align:center; margin-top:100px; color:red;">
+                            <h1>😡🖕</h1>
+                            <p>LU MAU NGAPAIN TOLOL?</p>
+                            <button onclick="location.reload()" style="padding:10px 20px; background:#0ea5e9; color:white; border:none; border-radius:5px; cursor:pointer;">Coba Lagi</button>
+                        </div>`;
+                }
+            } else {
+                document.getElementById("main-content").style.display = "block";
+            }
+        };
+
         window.saveProfile = () => {
             const logo = document.getElementById('set-logo').value;
             const name = document.getElementById('set-name').value;
-            if(!logo || !name) return Swal.fire("Waduh", "Isi semua!", "warning");
-            set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Berhasil!", "Profil update", "success"));
+            if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Ok!", "Profil Update", "success"));
         };
 
-        onValue(ref(db, 'dashboard/profile'), (snap) => {
-            if(snap.exists()){
-                document.getElementById('set-logo').value = snap.val().logo || "";
-                document.getElementById('set-name').value = snap.val().name || "";
+        onValue(ref(db, 'dashboard/profile'), (s) => {
+            if(s.exists()){
+                document.getElementById('set-logo').value = s.val().logo || "";
+                document.getElementById('set-name').value = s.val().name || "";
             }
         });
 
         window.addCategory = () => {
-            const name = document.getElementById('cat-name').value.trim();
-            if(!name) return;
-            push(ref(db, 'dashboard/categories'), { name: name.toUpperCase() }).then(() => {
-                document.getElementById('cat-name').value = "";
-            });
+            const n = document.getElementById('cat-name').value.trim();
+            if(n) push(ref(db, 'dashboard/categories'), { name: n.toUpperCase() }).then(() => { document.getElementById('cat-name').value = ""; });
         };
 
-        onValue(ref(db, 'dashboard/categories'), (snap) => {
+        onValue(ref(db, 'dashboard/categories'), (s) => {
             const list = document.getElementById('cat-list');
             const select = document.getElementById('select-cat');
             list.innerHTML = "";
             select.innerHTML = '<option value="">-- Pilih Kategori --</option>';
-            if(snap.exists()){
-                snap.forEach(child => {
-                    const data = child.val();
-                    list.innerHTML += `<div class="item"><span><b>${data.name}</b></span><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button></div>`;
-                    select.innerHTML += `<option value="${child.key}">${data.name}</option>`;
+            if(s.exists()){
+                s.forEach(child => {
+                    list.innerHTML += `<div class="item"><span><b>${child.val().name}</b></span><button class="btn-red" onclick="window.delData('dashboard/categories/${child.key}')">Hapus</button></div>`;
+                    select.innerHTML += `<option value="${child.key}">${child.val().name}</option>`;
                 });
             }
         });
 
         window.addButton = () => {
-            const catId = document.getElementById('select-cat').value;
-            const icon = document.getElementById('btn-icon').value.trim();
-            const label = document.getElementById('btn-label').value.trim();
-            const link = document.getElementById('btn-link').value.trim();
-            if(!catId || !label || !link) return;
-            push(ref(db, `dashboard/categories/${catId}/buttons`), { icon: icon || '🔗', label, link, ts: Date.now() });
+            const cid = document.getElementById('select-cat').value;
+            const ic = document.getElementById('btn-icon').value;
+            const lb = document.getElementById('btn-label').value;
+            const ln = document.getElementById('btn-link').value;
+            if(cid && lb && ln) push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln, ts: Date.now() }).then(() => Swal.fire("Sip!", "Tombol Ditambah", "success"));
         };
 
         window.delData = (path) => {
-            Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((result) => {
-                if (result.isConfirmed) remove(ref(db, path));
+            Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
+                if (r.isConfirmed) remove(ref(db, path));
             });
         };
-    };
 
-    _0xrun();
-</script>
+        _0xrun();
+    </script>
 </body>
 </html>
