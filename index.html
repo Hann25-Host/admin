@@ -88,29 +88,47 @@
                 return;
             }
 
-            const targetHash = "053186259f972049d108253a6a97858348b61c9e4722880a15e85e44503399d2";
+            const targetHash = "97701768858e772418a00693510f88647000e39b7a42169604df012c85e254e0";
 
             const { value: inputPw } = await Swal.fire({
                 title: 'ADMIN ACCESS',
                 input: 'password',
-                inputLabel: 'Masukkan Passkey:',
+                inputLabel: 'Masukkan Password:',
                 background: '#111',
                 color: '#fff',
                 confirmButtonColor: '#0ea5e9',
                 allowOutsideClick: false,
+                didOpen: () => {
+                    const input = Swal.getInput();
+                    if (input) input.focus();
+                },
                 showLoaderOnConfirm: true,
                 preConfirm: async (val) => {
                     const hashedInput = await createHash(val);
-                    if (hashedInput === targetHash) return true;
-                    Swal.showValidationMessage('Password Salah Kocak!');
-                    return false;
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            if (hashedInput === targetHash) {
+                                resolve(true);
+                            } else {
+                                Swal.showValidationMessage('Password Salah Kocak!');
+                                resolve(false);
+                            }
+                        }, 800);
+                    });
                 }
             });
 
             if (inputPw) {
                 sessionStorage.setItem("__auth", "true");
                 document.getElementById("main-content").style.display = "block";
-                Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Berhasil!', 
+                    timer: 800, 
+                    showConfirmButton: false, 
+                    background: '#111', 
+                    color: '#fff' 
+                });
             }
         };
 
