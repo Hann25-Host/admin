@@ -69,6 +69,12 @@
             <select class="cat-select-sync" onchange="window.loadButtonsToManage(this.value)"></select>
             <div id="manage-btn-list" style="margin-top:20px;"></div>
         </div>
+
+        <div class="card">
+            <h2>⭐ 5. Kelola Testimoni</h2>
+            <p id="testi-count" style="font-size: 11px; color: #0ea5e9;">Menghubungkan ke database testimoni...</p>
+            <div id="testi-admin-list" style="margin-top:20px; max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -86,8 +92,15 @@
             appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
         };
 
+        const testiConfig = {
+            apiKey: "AIzaSyALjgltMZpaRvsXnPywGXx-EcPLTHlt5ME",
+            databaseURL: "https://testimonihann25-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const appTesti = initializeApp(testiConfig, "testiApp");
+        const dbTesti = getDatabase(appTesti);
         const remoteConfig = getRemoteConfig(app);
 
         remoteConfig.settings.minimumFetchIntervalMillis = 0;
@@ -111,13 +124,11 @@
                     showLoaderOnConfirm: true,
                     preConfirm: (val) => {
                         return new Promise((resolve) => {
-                            setTimeout(() => {
-                                if (val === passkeyBenar) resolve(true);
-                                else {
-                                    Swal.showValidationMessage('Password Salah!');
-                                    resolve(false);
-                                }
-                            }, 500);
+                            if (val === passkeyBenar) resolve(true);
+                            else {
+                                Swal.showValidationMessage('Password Salah!');
+                                resolve(false);
+                            }
                         });
                     }
                 });
@@ -125,9 +136,7 @@
                     sessionStorage.setItem("__auth", "true");
                     document.getElementById("main-content").style.display = "block";
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         };
 
         window.addSidebar = () => {
@@ -135,11 +144,8 @@
             const lb = document.getElementById('side-label').value.trim();
             const ln = document.getElementById('side-link').value.trim();
             if(lb && ln) {
-                push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln }).then(() => {
-                    document.getElementById('side-icon').value = "";
-                    document.getElementById('side-label').value = "";
-                    document.getElementById('side-link').value = "";
-                });
+                push(ref(db, 'dashboard/sidebar'), { icon: ic || '📍', label: lb, link: ln });
+                document.querySelectorAll('#side-icon, #side-label, #side-link').forEach(i => i.value = "");
             }
         };
 
@@ -178,13 +184,9 @@
             const lb = document.getElementById('btn-label').value.trim();
             const ln = document.getElementById('btn-link').value.trim();
             if(cid && lb && ln) {
-                push(ref(db, `dashboard/categories/${cid}/buttons`), { 
-                    icon: ic || '🔗', label: lb, link: ln, ts: Date.now() 
-                }).then(() => {
-                    Swal.fire("Sip!", "Tombol Ditambah", "success");
-                    document.getElementById('btn-icon').value = "";
-                    document.getElementById('btn-label').value = "";
-                    document.getElementById('btn-link').value = "";
+                push(ref(db, `dashboard/categories/${cid}/buttons`), { icon: ic || '🔗', label: lb, link: ln, ts: Date.now() }).then(() => {
+                    Swal.fire("Berhasil", "Tombol Ditambah", "success");
+                    document.querySelectorAll('#btn-icon, #btn-label, #btn-link').forEach(i => i.value = "");
                 });
             }
         };
@@ -202,8 +204,41 @@
             });
         };
 
+        onValue(ref(dbTesti, 'testimonies'), (snap) => {
+            const list = document.getElementById('testi-admin-list');
+            const countLabel = document.getElementById('testi-count');
+            list.innerHTML = "";
+            if(snap.exists()){
+                let items = [];
+                snap.forEach(c => { items.push({ id: c.key, ...c.val() }); });
+                items.sort((a,b) => b.ts - a.ts);
+                countLabel.innerText = `${items.length} Testimoni Terdaftar`;
+                items.forEach(t => {
+                    const img = (t.photo === 'default' || !t.photo) ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
+                    list.innerHTML += `
+                        <div class="item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                            <div style="display:flex; align-items:center; gap:10px; width:100%;">
+                                <img src="${img}" style="width:30px; height:30px; border-radius:50%; border:1px solid #0ea5e9; object-fit:cover;">
+                                <div style="flex:1;">
+                                    <div style="font-size:13px; font-weight:bold; color:#0ea5e9;">${t.name} <span style="color:#facc15; font-size:10px;">★${t.rating}</span></div>
+                                    <div style="font-size:10px; color:#555;">${t.date}</div>
+                                </div>
+                                <button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button>
+                            </div>
+                            <div style="font-size:12px; color:#ccc; line-height:1.4; background:#000; padding:8px; border-radius:5px; width:100%; box-sizing:border-box;">${t.message}</div>
+                        </div>`;
+                });
+            } else { countLabel.innerText = "0 Testimoni"; }
+        });
+
+        window.delTesti = (id) => {
+            Swal.fire({ title: "Hapus Testimoni?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
+                if (r.isConfirmed) remove(ref(dbTesti, `testimonies/${id}`));
+            });
+        };
+
         window.delData = (path) => {
-            Swal.fire({ title: "Hapus?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
+            Swal.fire({ title: "Hapus Data?", icon: "warning", showCancelButton: true, background: '#111', color: '#fff' }).then((r) => {
                 if (r.isConfirmed) remove(ref(db, path));
             });
         };
