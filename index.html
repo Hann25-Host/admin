@@ -75,61 +75,49 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        async function _0xhash(_0xstr, _0xkey) {
-            const _0xenc = new TextEncoder();
-            const _0xk = await crypto.subtle.importKey('raw', _0xenc.encode(_0xkey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-            const _0xsig = await crypto.subtle.sign('HMAC', _0xk, _0xenc.encode(_0xstr));
-            return Array.from(new Uint8Array(_0xsig)).map(b => b.toString(16).padStart(2, '0')).join('');
+        async function createHash(str) {
+            const msgBuffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        const _0xrun = async () => {
-            const _0xtarget = "77196020581335091726a84c680875e533088730999596486060609355428943";
-            
-            if (sessionStorage.getItem("__auth") !== "true") {
-                const { value: _0xin } = await Swal.fire({
-                    title: 'ADMIN ACCESS',
-                    input: 'password',
-                    inputLabel: 'Passkey Admin:',
-                    background: '#111',
-                    color: '#fff',
-                    confirmButtonColor: '#0ea5e9',
-                    allowOutsideClick: false,
-                    showLoaderOnConfirm: true,
-                    preConfirm: async (loginValue) => {
-                        const hashed = await _0xhash(loginValue, "170408");
-                        return new Promise((resolve) => {
-                            setTimeout(() => {
-                                if (hashed === _0xtarget) {
-                                    resolve(loginValue);
-                                } else {
-                                    Swal.showValidationMessage('Passkey Salah, Kocak!');
-                                    resolve(null);
-                                }
-                            }, 1000);
-                        });
-                    }
-                });
-
-                if (_0xin) {
-                    sessionStorage.setItem("__auth", "true");
-                    document.getElementById("main-content").style.display = "block";
-                } else {
-                    document.body.innerHTML = `
-                        <div style="text-align:center; margin-top:100px; color:red;">
-                            <h1>😡🖕</h1>
-                            <p>LU MAU NGAPAIN TOLOL?</p>
-                            <button onclick="location.reload()" style="padding:10px 20px; background:#0ea5e9; color:white; border:none; border-radius:5px; cursor:pointer;">Coba Lagi</button>
-                        </div>`;
-                }
-            } else {
+        const checkAccess = async () => {
+            if (sessionStorage.getItem("__auth") === "true") {
                 document.getElementById("main-content").style.display = "block";
+                return;
+            }
+
+            const targetHash = "053186259f972049d108253a6a97858348b61c9e4722880a15e85e44503399d2";
+
+            const { value: inputPw } = await Swal.fire({
+                title: 'ADMIN ACCESS',
+                input: 'password',
+                inputLabel: 'Masukkan Passkey:',
+                background: '#111',
+                color: '#fff',
+                confirmButtonColor: '#0ea5e9',
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                preConfirm: async (val) => {
+                    const hashedInput = await createHash(val);
+                    if (hashedInput === targetHash) return true;
+                    Swal.showValidationMessage('Password Salah Kocak!');
+                    return false;
+                }
+            });
+
+            if (inputPw) {
+                sessionStorage.setItem("__auth", "true");
+                document.getElementById("main-content").style.display = "block";
+                Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
             }
         };
 
         window.saveProfile = () => {
             const logo = document.getElementById('set-logo').value;
             const name = document.getElementById('set-name').value;
-            if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Ok!", "Profil Update", "success"));
+            if(logo && name) set(ref(db, 'dashboard/profile'), { logo, name }).then(() => Swal.fire("Sip!", "Profil Diupdate", "success"));
         };
 
         onValue(ref(db, 'dashboard/profile'), (s) => {
@@ -171,7 +159,7 @@
             });
         };
 
-        _0xrun();
+        checkAccess();
     </script>
 </body>
 </html>
