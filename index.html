@@ -7,6 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 20px; min-height: 100vh; }
+        .header-area { text-align: center; margin-bottom: 30px; margin-top: 10px; }
+        .header-area h1 { letter-spacing: 2px; margin-bottom: 5px; font-size: 24px; }
+        .header-area p { color: #666; font-size: 12px; margin-top: 0; }
         .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; max-width: 600px; margin-inline: auto; }
         h2 { color: #0ea5e9; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; margin-top: 10px; }
@@ -17,12 +20,16 @@
         .btn-blue:hover { background: #0284c7; }
         .btn-red { background: #ff4757; color: white; padding: 5px 10px; font-size: 11px; width: auto; border-radius: 5px; border: none; cursor: pointer; }
         .item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #333; }
-        .icon-preview { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; margin-right: 5px; }
         #main-content { display: none; }
     </style>
 </head>
 <body>
     <div id="main-content">
+        <div class="header-area">
+            <h1>MANAGER DASHBOARD</h1>
+            <p>Update konten tanpa edit kode HTML</p>
+        </div>
+
         <div class="card">
             <h2>👤 0. Pengaturan Profil</h2>
             <label>URL Foto Profil (Logo)</label>
@@ -30,11 +37,6 @@
             <label>Nama Brand (Judul Utama)</label>
             <input type="text" id="set-name">
             <button class="btn btn-blue" onclick="window.saveProfile()">Update Profil</button>
-        </div>
-
-        <div style="text-align:center; margin-bottom: 30px;">
-            <h1 style="letter-spacing: 2px;">MANAGER DASHBOARD</h1>
-            <p style="color:#666; font-size: 12px;">Update konten tanpa edit kode HTML</p>
         </div>
 
         <div class="card">
@@ -62,6 +64,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-remote-config.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
@@ -75,35 +78,52 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const remoteConfig = getRemoteConfig(app);
+
+        // Set biar update-nya real-time (langsung kerasa)
+        remoteConfig.settings.minimumFetchIntervalMillis = 0;
 
         const checkAccess = async () => {
             if (sessionStorage.getItem("__auth") === "true") {
                 document.getElementById("main-content").style.display = "block";
                 return;
             }
-            const key = "am9qb2hhbm4yNQ=="; 
-            const { value: inputPw } = await Swal.fire({
-                title: 'ADMIN ACCESS',
-                input: 'password',
-                inputLabel: 'Masukkan Password:',
-                background: '#111',
-                color: '#fff',
-                confirmButtonColor: '#0ea5e9',
-                allowOutsideClick: false,
-                showLoaderOnConfirm: true,
-                preConfirm: (val) => {
-                    return new Promise((resolve) => {
-                        setTimeout(() => {
-                            if (btoa(val) === key) resolve(true);
-                            else { Swal.showValidationMessage('Password Salah Kocak!'); resolve(false); }
-                        }, 1000);
-                    });
+
+            try {
+                // Tarik password dari Remote Config
+                await fetchAndActivate(remoteConfig);
+                const passkeyBenar = getValue(remoteConfig, "admin_password").asString();
+
+                const { value: inputPw } = await Swal.fire({
+                    title: 'ADMIN ACCESS',
+                    input: 'password',
+                    inputLabel: 'Masukkan Password:',
+                    background: '#111',
+                    color: '#fff',
+                    confirmButtonColor: '#0ea5e9',
+                    allowOutsideClick: false,
+                    showLoaderOnConfirm: true,
+                    preConfirm: (val) => {
+                        return new Promise((resolve) => {
+                            setTimeout(() => {
+                                if (val === passkeyBenar) resolve(true);
+                                else {
+                                    Swal.showValidationMessage('Password Salah!');
+                                    resolve(false);
+                                }
+                            }, 500);
+                        });
+                    }
+                });
+
+                if (inputPw) {
+                    sessionStorage.setItem("__auth", "true");
+                    document.getElementById("main-content").style.display = "block";
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
                 }
-            });
-            if (inputPw) {
-                sessionStorage.setItem("__auth", "true");
-                document.getElementById("main-content").style.display = "block";
-                Swal.fire({ icon: 'success', title: 'Berhasil!', timer: 1000, showConfirmButton: false, background: '#111', color: '#fff' });
+            } catch (err) {
+                console.error("Gagal narik Remote Config:", err);
+                Swal.fire("Error", "Gagal menghubungkan ke server", "error");
             }
         };
 
