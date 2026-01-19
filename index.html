@@ -199,19 +199,90 @@
 
         window.delData = (p) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(db, p)));
 
+                // LOGIC PAGINATION TESTIMONI
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let allTestimonies = [];
+
         onValue(ref(dbT, 'testimonies'), (s) => {
-            const l = document.getElementById('testi-admin-list'); l.innerHTML = "";
-            let a = []; 
+            allTestimonies = []; 
             if(s.exists()) {
-                s.forEach(c => a.push({id: c.key, ...c.val()}));
-                a.sort((x,y) => y.ts - x.ts);
-                document.getElementById('testi-count').innerText = `${a.length} Testimoni`;
-                a.forEach(t => {
-                    const p = t.photo === 'default' ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
-                    l.innerHTML += `<div class="item" style="flex-direction:column;align-items:start;"><div style="display:flex;align-items:center;gap:10px;width:100%;"><img src="${p}" style="width:30px;height:30px;border-radius:50%;"><div style="flex:1;"><b>${t.name}</b></div><button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button></div></div>`;
+                s.forEach(c => { 
+                    allTestimonies.push({id: c.key, ...c.val()}); 
                 });
+                // Urutkan terbaru
+                allTestimonies.sort((x, y) => (y.ts || 0) - (x.ts || 0));
+                renderTestiWithPagination();
+            } else {
+                document.getElementById('testi-admin-list').innerHTML = "<p style='text-align:center;color:#444;'>Belum ada ulasan.</p>";
+                document.getElementById('testi-count').innerText = "0 Testimoni";
             }
         });
+
+        window.renderTestiWithPagination = () => {
+            const list = document.getElementById('testi-admin-list');
+            list.innerHTML = "";
+            
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedItems = allTestimonies.slice(start, end);
+            
+            document.getElementById('testi-count').innerText = `${allTestimonies.length} Testimoni (Halaman ${currentPage})`;
+
+            paginatedItems.forEach(t => {
+                const p = (t.photo === 'default' || !t.photo) ? 'https://i.ibb.co.com/pBn06NLp/user.png' : t.photo;
+                const d = document.createElement('div');
+                d.className = 'item';
+                d.style.flexDirection = 'column';
+                d.style.alignItems = 'start';
+                d.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;width:100%;">
+                        <img src="${p}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;">
+                        <div style="flex:1;">
+                            <b style="font-size:13px;color:#0ea5e9;">${t.name}</b>
+                            <div style="font-size:10px;color:#666;">${t.date || ''}</div>
+                        </div>
+                        <button class="btn-red" onclick="window.delTesti('${t.id}')">Hapus</button>
+                    </div>
+                    <div style="font-size:11px;color:#ccc;margin-top:8px;padding-left:40px;">"${t.message}"</div>
+                `;
+                list.appendChild(d);
+            });
+
+            renderPaginationControls();
+        };
+
+        function renderPaginationControls() {
+            const totalPages = Math.ceil(allTestimonies.length / itemsPerPage);
+            if(totalPages <= 1) return;
+
+            const nav = document.createElement('div');
+            nav.style.cssText = "display:flex; justify-content:center; gap:8px; margin-top:20px; padding:10px 0; flex-wrap:wrap;";
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.style.cssText = `
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    border: 1px solid ${i === currentPage ? '#0ea5e9' : '#333'};
+                    background: ${i === currentPage ? '#0ea5e9' : '#111'};
+                    color: white;
+                    cursor: pointer;
+                    font-size: 12px;
+                    font-weight: bold;
+                    transition: 0.2s;
+                `;
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderTestiWithPagination();
+                    // Scroll ke judul Card Testimoni biar gak bingung pas ganti halaman
+                    document.getElementById('testi-count').scrollIntoView({ behavior: 'smooth' });
+                };
+                nav.appendChild(btn);
+            }
+            document.getElementById('testi-admin-list').appendChild(nav);
+        }
 
         window.delTesti = (id) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(dbT, `testimonies/${id}`)));
 
