@@ -74,7 +74,7 @@
         import { getDatabase, ref, onValue, push, remove, update, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-remote-config.js";
 
-        const firebaseConfig = {
+                        const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
             authDomain: "adminhann25.firebaseapp.com",
             projectId: "adminhann25",
@@ -82,18 +82,12 @@
             appId: "1:1020946488981:web:9b2cf0902f5665e342c59c"
         };
 
-        const testiConfig = {
-            apiKey: "AIzaSyALjgltMZpaRvsXnPywGXx-EcPLTHlt5ME",
-            databaseURL: "https://testimonihann25-default-rtdb.asia-southeast1.firebasedatabase.app",
-            appId: "1:222002513476:web:46249257e0520268579d46"
-        };
-
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const appT = initializeApp(testiConfig, "testiApp");
-        const dbT = getDatabase(appT);
+        const dbT = db;
         const rc = getRemoteConfig(app);
         rc.settings.minimumFetchIntervalMillis = 0;
+
 
         let isDragging = false;
         let curCid = null;
