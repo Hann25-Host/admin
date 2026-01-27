@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HANN 25 - ADMIN</title>
@@ -74,7 +76,7 @@
         import { getDatabase, ref, onValue, push, remove, update, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getRemoteConfig, getValue, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-remote-config.js";
 
-                        const firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyBgqJ0f2v88T6Ijamd5gGS-NZzJyVl0pYU",
             authDomain: "adminhann25.firebaseapp.com",
             projectId: "adminhann25",
@@ -87,7 +89,6 @@
         const dbT = db;
         const rc = getRemoteConfig(app);
         rc.settings.minimumFetchIntervalMillis = 0;
-
 
         let isDragging = false;
         let curCid = null;
@@ -103,7 +104,15 @@
                 const pass = getValue(rc, "admin_password").asString();
                 const { value: res } = await Swal.fire({
                     title: 'ADMIN ACCESS', input: 'password', background: '#111', color: '#fff',
-                    allowOutsideClick: false, preConfirm: (v) => v === pass || Swal.showValidationMessage('Salah!')
+                    allowOutsideClick: false, preConfirm: (v) => {
+                        const inputHashed = CryptoJS.SHA256(v).toString();
+                        if (inputHashed === pass) {
+                            return true;
+                        } else {
+                            Swal.showValidationMessage('Salah!');
+                            return false;
+                        }
+                    }
                 });
                 if (res) {
                     sessionStorage.setItem("__auth", "true");
@@ -193,7 +202,6 @@
 
         window.delData = (p) => Swal.fire({title:"Hapus?", icon:"warning", showCancelButton:true}).then(r => r.isConfirmed && remove(ref(db, p)));
 
-                // LOGIC PAGINATION TESTIMONI
         let currentPage = 1;
         const itemsPerPage = 10;
         let allTestimonies = [];
@@ -204,7 +212,6 @@
                 s.forEach(c => { 
                     allTestimonies.push({id: c.key, ...c.val()}); 
                 });
-                // Urutkan terbaru
                 allTestimonies.sort((x, y) => (y.ts || 0) - (x.ts || 0));
                 renderTestiWithPagination();
             } else {
@@ -270,7 +277,6 @@
                 btn.onclick = () => {
                     currentPage = i;
                     renderTestiWithPagination();
-                    // Scroll ke judul Card Testimoni biar gak bingung pas ganti halaman
                     document.getElementById('testi-count').scrollIntoView({ behavior: 'smooth' });
                 };
                 nav.appendChild(btn);
